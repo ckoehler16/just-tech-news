@@ -38,7 +38,7 @@ router.get('/:id', (req, res) => {
         });
 });
 
-// POST /api/users
+// POST create /api/users
 router.post('/', (req, res) => {
     // Access our User model and run .create() method
     // Expects {username: 'Lernantine', email: 'lernantino@gmail.com', password: 'password1234'}
@@ -79,7 +79,7 @@ router.post('/login', (req, res) => {
     });
 });
 
-// PUT /api/users/1
+// PUT (update) /api/users/1
 router.put('/:id', (req, res) => {
     // Expects {username: 'Lernantine', email: 'lernantino@gmail.com', password: 'password1234'}
 
