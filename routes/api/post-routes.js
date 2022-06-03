@@ -1,11 +1,11 @@
+const router = require('express').Router();
 const sequelize = require('../../config/connection');
-const router = require("express").Router();
-const { Post, User, Vote } = require('../../models');
+const { Post, User, Comment, Vote } = require('../../models');
 
-// Get all users
-router.get("/", (req, res) => {
+// get all users
+router.get('/', (req, res) => {
+    console.log('======================');
     Post.findAll({
-        // query configuration
         attributes: [
             'id',
             'post_url',
@@ -15,6 +15,14 @@ router.get("/", (req, res) => {
         ],
         order: [['created_at', 'DESC']],
         include: [
+            {
+                model: Comment,
+                attributes: ['id', 'comment_text', 'post_id', 'user_id', 'created_at'],
+                include: {
+                    model: User,
+                    attributes: ['username']
+                }
+            },
             {
                 model: User,
                 attributes: ['username']
@@ -28,19 +36,27 @@ router.get("/", (req, res) => {
         });
 });
 
-// Get a single Post
-router.get("/:id", (req, res) => {
+router.get('/:id', (req, res) => {
     Post.findOne({
         where: {
             id: req.params.id
         },
-        attributes: ['id',
-        'post_url',
-        'title',
-        'created_at',
-        [sequelize.literal('(SELECT COUNT(*) FROM vote WHERE post.id = vote.post_id)'), 'vote_count']
+        attributes: [
+            'id',
+            'post_url',
+            'title',
+            'created_at',
+            [sequelize.literal('(SELECT COUNT(*) FROM vote WHERE post.id = vote.post_id)'), 'vote_count']
         ],
         include: [
+            {
+                model: Comment,
+                attributes: ['id', 'comment_text', 'post_id', 'user_id', 'created_at'],
+                include: {
+                    model: User,
+                    attributes: ['username']
+                }
+            },
             {
                 model: User,
                 attributes: ['username']
@@ -49,7 +65,7 @@ router.get("/:id", (req, res) => {
     })
         .then(dbPostData => {
             if (!dbPostData) {
-                res.status(404).json({ message: "No post found with this id" });
+                res.status(404).json({ message: 'No post found with this id' });
                 return;
             }
             res.json(dbPostData);
@@ -60,8 +76,7 @@ router.get("/:id", (req, res) => {
         });
 });
 
-// Create a new Post
-router.post("/", (req, res) => {
+router.post('/', (req, res) => {
     // expects {title: 'Taskmaster goes public!', post_url: 'https://taskmaster.com/press', user_id: 1}
     Post.create({
         title: req.body.title,
@@ -75,19 +90,17 @@ router.post("/", (req, res) => {
         });
 });
 
-// PUT /api/posts/upvote
-router.put("/upvote", (req, res) => {
+router.put('/upvote', (req, res) => {
     // custom static method created in models/Post.js
-    Post.upvote(req.body, { Vote })
-        .then(updatedPostData => res.json(updatedPostData))
+    Post.upvote(req.body, { Vote, Comment, User })
+        .then(updatedVoteData => res.json(updatedVoteData))
         .catch(err => {
             console.log(err);
-            res.status(400).json(err);
+            res.status(500).json(err);
         });
 });
 
-// Update a Post's Title
-router.put("/:id", (req, res) => {
+router.put('/:id', (req, res) => {
     Post.update(
         {
             title: req.body.title
@@ -100,7 +113,7 @@ router.put("/:id", (req, res) => {
     )
         .then(dbPostData => {
             if (!dbPostData) {
-                res.status(404).json({ message: "No post found with this id" });
+                res.status(404).json({ message: 'No post found with this id' });
                 return;
             }
             res.json(dbPostData);
@@ -111,8 +124,7 @@ router.put("/:id", (req, res) => {
         });
 });
 
-// Delete a Post
-router.delete("/:id", (req, res) => {
+router.delete('/:id', (req, res) => {
     Post.destroy({
         where: {
             id: req.params.id
@@ -120,7 +132,7 @@ router.delete("/:id", (req, res) => {
     })
         .then(dbPostData => {
             if (!dbPostData) {
-                res.status(404).json({ message: "No post found with this id" });
+                res.status(404).json({ message: 'No post found with this id' });
                 return;
             }
             res.json(dbPostData);
@@ -130,6 +142,5 @@ router.delete("/:id", (req, res) => {
             res.status(500).json(err);
         });
 });
-
 
 module.exports = router;
